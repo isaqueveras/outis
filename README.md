@@ -10,7 +10,7 @@ import ...
 
 func main() {
   // Initialize Outis to be able to add routines
-  watch := outis.Watcher(utils.NewOutisProduction())
+  watch := outis.Watcher(utils.NewOutis())
   
   go watch.Go(
     // Routine identifier to perform concurrency control 
@@ -25,17 +25,21 @@ func main() {
     // It will run from 12pm to 4pm.
     // by default, there are no time restrictions.
     outis.WithHours(12, 16),
+
+    // Time when routine information will be updated
+    outis.WithLoadInterval(30),
     
     // Here the script function that will be executed will be passed
-    outis.WithRoutine(func(c outis.Channel) {
-      log.Println("Hi, I'm a script!")
-
-      ...
+    outis.WithRoutine(func(ctx *outis.Context) {
+      ctx.Info("this is an information message")
+      ctx.Error(errors.New("this is an error message"))
       
-      if err != nil {
-        c <- errors.New("This is an error message")
-        return
-      }
+      ctx.Metric("client_ids", []int64{234234})
+      ctx.Metric("notification", outis.Metric{
+        "client_id": 234234,
+        "message":   "Hi, we are notifying you.",
+        "fcm":       "3p2okrmionfiun2uni3nfin2i3f",
+      })
     }),
   )
 
@@ -45,8 +49,8 @@ func main() {
 
 ```
 
-## Implements the IOutis interface
-It is necessary to implement the IOutis interface to initialize Watcher.
+## Implements the Interface
+It is necessary to implement the Interface interface to initialize Watcher.
 
 ```go
 package utils
@@ -55,7 +59,7 @@ import ...
 
 type repo struct{}
 
-// NewOutisProduction initializes the implementation of the Outis interface.
+// NewOutis initializes the implementation of the Interface interface.
 // 
 // It is recommended to create a role for each environment, 
 // one for development and one for production.
@@ -63,26 +67,26 @@ type repo struct{}
 // For development you can implement the Lock and Unlock method 
 // to use in-memory control and production can be done using 
 // a redis database or a central server.
-func NewOutisProduction() outis.IOutis {
+func NewOutis() outis.Interface {
   return &repo{}
 }
 
 // Lock defines the method by which concurrency 
 // blocking will be implemented
-func (*repo) Lock(id string) (string, error) {}
+func (*repo) Lock(outis.ID) (outis.ID, error) {}
 
 // Unlock defines the method by which concurrency
 // unblocking will be implemented
-func (*repo) Unlock(id string) error {}
+func (*repo) Unlock(outis.ID) error {}
 
 // Store defines the method for saving 
 // the routine's initial information
-func (*repo) Store(*outis.Outis) error {}
+func (*repo) Store(*outis.Context) error {}
 
 // Load defines the method to fetch updated 
 // information from the routine
-func (*repo) Load(*outis.Outis) error {}
+func (*repo) Load(o *outis.Context) error {}
 
-// Handling defines the method for handling errors
-func (*repo) Handling(error) {}
+// Event defines the method for handling events
+func (*repo) Event(event outis.Event) {}
 ```
