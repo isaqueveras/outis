@@ -2,42 +2,49 @@ package outis
 
 // WithName ...
 func WithName(name string) Option {
-	return func(r *Outis) {
-		r.Name = name
+	return func(r *Context) {
+		r.Name = &name
 	}
 }
 
-// WithDescription ...
-func WithDescription(desc string) Option {
-	return func(r *Outis) {
-		r.Description = desc
+// WithDesc ...
+func WithDesc(desc string) Option {
+	return func(r *Context) {
+		r.Desc = &desc
 	}
 }
 
-// WithType ...
-func WithType(t string) Option {
-	return func(r *Outis) {
-		r.TypeRoutine = t
+// WithID ...
+func WithID(id ID) Option {
+	return func(r *Context) {
+		r.Id = &id
 	}
 }
 
 // WithRoutine ...
 func WithRoutine(routine Routine) Option {
-	return func(r *Outis) {
+	return func(r *Context) {
 		r.routine = routine
 	}
 }
 
 // WithHours ...
 func WithHours(start, end int) Option {
-	return func(r *Outis) {
-		r.StartHour, r.EndHour = start, end
+	return func(r *Context) {
+		r.StartHour, r.EndHour = &start, &end
+	}
+}
+
+// WithLoadInterval ...
+func WithLoadInterval(seconds int) Option {
+	return func(r *Context) {
+		r.LoadInterval = &seconds
 	}
 }
 
 // WithInterval ...
 func WithInterval(seconds int) Option {
-	return func(r *Outis) {
-		r.Interval = seconds
+	return func(r *Context) {
+		r.Interval = &seconds
 	}
 }
