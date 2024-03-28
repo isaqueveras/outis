@@ -85,8 +85,8 @@ func (*repo) Store(*outis.Context) error {}
 
 // Load defines the method to fetch updated 
 // information from the routine
-func (*repo) Load(o *outis.Context) error {}
+func (*repo) Load(*outis.Context) error {}
 
 // Event defines the method for handling events
-func (*repo) Event(event outis.Event) {}
+func (*repo) Event(outis.Event) {}
 ```

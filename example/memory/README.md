@@ -3,24 +3,24 @@ Result of metrics from the sendNotification routine sendNotification
 
 ```json
 {
-  "id":"5860c194-4dcc-4c60-b86e-3c9b9dacb9b1",
-  "initialized":"2024-03-22T13:43:43.586312798-03:00",
-  "terminated":"2024-03-22T13:43:43.586371283-03:00",
-  "runtime":0.000058319,
+  "id":"05fdceb7-e320-4bd0-9aaf-533474ca012e",
+  "initialized":"2024-03-28T12:33:28.031615981-03:00",
+  "terminated":"2024-03-28T12:33:28.031653797-03:00",
   "routine":{
     "id":"b7504beb-1132-4ced-8813-3525523cac1d",
     "name":"Routine 01",
-    "path":"example/memory/main.go:24"
+    "path":"example/memory/main.go:25"
   },
   "metadata":{
+    "client_ids":[
+      234234
+    ],
     "notification":{
       "client_id":234234,
       "fcm":"3p2okrmionfiun2uni3nfin2i3f",
-      "msg":"Hi, we are notifying you."
+      "message":"Hi, we are notifying you."
     },
-    "client_id":[
-      234234
-    ]
+    "runtime":0.000037496
   }
 }
 ```
