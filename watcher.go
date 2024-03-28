@@ -1,7 +1,6 @@
 package outis
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -92,20 +91,10 @@ func (w *watch) Go(opts ...Option) {
 		loadInterval: 0,
 	}
 
-	for _, opt := range opts {
-		if opt == nil {
-			continue
-		}
-		opt(ctx)
-	}
+	ctx.With(opts...)
 
-	if ctx.GetID() == "id" {
-		w.inter.Event(errors.New("the routine id is required"))
-		return
-	}
-
-	if ctx.routine == nil {
-		w.inter.Event(errors.New("the routine is required"))
+	if err := ctx.validate(); err != nil {
+		w.inter.Event(err)
 		return
 	}
 

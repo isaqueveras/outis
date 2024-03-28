@@ -1,5 +1,15 @@
 package outis
 
+// With ...
+func (ctx *Context) With(opts ...Option) {
+	for _, opt := range opts {
+		if opt == nil {
+			continue
+		}
+		opt(ctx)
+	}
+}
+
 // WithName ...
 func WithName(name string) Option {
 	return func(r *Context) {
