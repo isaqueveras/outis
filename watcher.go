@@ -83,12 +83,13 @@ func (w *watch) Wait() {
 
 // Go ...
 func (w *watch) Go(opts ...Option) {
-	interval := 600 // 60 sec * 10 min
+	const interval uint = 60 // 1 min
 
 	ctx := &Context{
-		channel:  make(chan interface{}),
-		Interval: &interval,
-		metric:   &Metric{},
+		channel:      make(chan interface{}),
+		interval:     interval,
+		metric:       Metric{},
+		loadInterval: 0,
 	}
 
 	for _, opt := range opts {
@@ -117,7 +118,7 @@ func (w *watch) Go(opts ...Option) {
 		return
 	}
 
-	if ctx.LoadInterval != nil {
+	if ctx.loadInterval != 0 {
 		go ctx.reload(w.inter)
 	}
 
@@ -133,7 +134,7 @@ func (w *watch) Go(opts ...Option) {
 		}
 	}()
 
-	ticker := time.NewTicker(time.Second * time.Duration(*ctx.Interval))
+	ticker := time.NewTicker(time.Second * time.Duration(ctx.interval))
 	for range ticker.C {
 		if !ctx.isTime(time.Now().Hour()) {
 			continue
@@ -144,14 +145,14 @@ func (w *watch) Go(opts ...Option) {
 			continue
 		}
 
-		ticker.Reset(time.Second * time.Duration(*ctx.Interval))
+		ticker.Reset(time.Second * time.Duration(ctx.interval))
 	}
 }
 
 func (w *watch) process(ctx *Context) error {
 	now := time.Now()
 
-	id, err := w.inter.Lock(*ctx.Id)
+	id, err := w.inter.Lock(ctx.id)
 	if err != nil {
 		return err
 	}
@@ -166,14 +167,14 @@ func (w *watch) process(ctx *Context) error {
 		Terminated:  time.Now(),
 		Runtime:     runtime,
 		Metadata:    ctx.metric,
-		Routine: &RoutineMetric{
+		Routine: RoutineMetric{
 			ID:   ctx.GetID().ToString(),
 			Name: ctx.GetName(),
 			Path: ctx.path,
 		},
 	})
 
-	ctx.metric = &Metric{}
+	ctx.metric = Metric{}
 	if err = w.inter.Unlock(id); err != nil {
 		return err
 	}
@@ -183,11 +184,12 @@ func (w *watch) process(ctx *Context) error {
 }
 
 func (ctx *Context) reload(ioutis Interface) {
-	ticker := time.NewTicker(time.Second * time.Duration(*ctx.LoadInterval))
+	ticker := time.NewTicker(time.Second * time.Duration(ctx.loadInterval))
 	for range ticker.C {
 		if err := ioutis.Load(ctx); err != nil {
 			ioutis.Event(err)
 		}
-		ticker.Reset(time.Second * time.Duration(*ctx.LoadInterval))
+		ticker.Reset(time.Second * time.Duration(ctx.loadInterval))
+		ioutis.Event(fmt.Sprintf(`[updated] routine "%s" with id "%s" has been updated`, ctx.GetName(), ctx.GetID()))
 	}
 }

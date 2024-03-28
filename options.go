@@ -3,21 +3,21 @@ package outis
 // WithName ...
 func WithName(name string) Option {
 	return func(r *Context) {
-		r.Name = &name
+		r.name = name
 	}
 }
 
 // WithDesc ...
 func WithDesc(desc string) Option {
 	return func(r *Context) {
-		r.Desc = &desc
+		r.desc = desc
 	}
 }
 
 // WithID ...
 func WithID(id ID) Option {
 	return func(r *Context) {
-		r.Id = &id
+		r.id = id
 	}
 }
 
@@ -29,22 +29,22 @@ func WithRoutine(routine Routine) Option {
 }
 
 // WithHours ...
-func WithHours(start, end int) Option {
+func WithHours(start, end uint) Option {
 	return func(r *Context) {
-		r.StartHour, r.EndHour = &start, &end
-	}
-}
-
-// WithLoadInterval ...
-func WithLoadInterval(seconds int) Option {
-	return func(r *Context) {
-		r.LoadInterval = &seconds
+		r.startHour, r.endHour = start, end
 	}
 }
 
 // WithInterval ...
-func WithInterval(seconds int) Option {
+func WithInterval(seconds uint) Option {
 	return func(r *Context) {
-		r.Interval = &seconds
+		r.interval = seconds
+	}
+}
+
+// WithLoadInterval ...
+func WithLoadInterval(seconds uint) Option {
+	return func(r *Context) {
+		r.loadInterval = seconds
 	}
 }
