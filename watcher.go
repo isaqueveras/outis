@@ -113,7 +113,7 @@ func (w *watch) Go(opts ...Option) {
 
 	defer func() {
 		if r := recover(); r != nil {
-			w.inter.Event(fmt.Errorf("panic: %v", r))
+			w.inter.Event(fmt.Errorf("PANIC: %v", r))
 		}
 	}()
 
@@ -146,7 +146,7 @@ func (w *watch) process(ctx *Context) error {
 		return err
 	}
 
-	w.inter.Event(fmt.Sprintf(`[initialized] routine "%s" with id "%s"`, ctx.GetName(), id))
+	w.inter.Event(fmt.Sprintf(`[INITIALIZED] routine '%s' with id '%s'`, ctx.GetName(), id))
 	ctx.routine(ctx)
 
 	runtime := time.Since(now).Seconds()
@@ -168,7 +168,7 @@ func (w *watch) process(ctx *Context) error {
 		return err
 	}
 
-	w.inter.Event(fmt.Sprintf(`[terminated] routine "%s" with id "%s" in %v seconds`, ctx.GetName(), id, runtime))
+	w.inter.Event(fmt.Sprintf(`[TERMINATED] routine '%s' with id '%s' in %v seconds`, ctx.GetName(), id, runtime))
 	return nil
 }
 
@@ -179,6 +179,6 @@ func (ctx *Context) reload(ioutis Interface) {
 			ioutis.Event(err)
 		}
 		ticker.Reset(time.Second * time.Duration(ctx.loadInterval))
-		ioutis.Event(fmt.Sprintf(`[updated] routine "%s" with id "%s" has been updated`, ctx.GetName(), ctx.GetID()))
+		ioutis.Event(fmt.Sprintf(`[UPDATED] routine '%s' with id '%s' has been updated`, ctx.GetName(), ctx.GetID()))
 	}
 }
