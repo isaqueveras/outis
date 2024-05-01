@@ -1,5 +1,7 @@
 package outis
 
+import "time"
+
 // With ...
 func (ctx *Context) With(opts ...Option) {
 	for _, opt := range opts {
@@ -46,15 +48,15 @@ func WithHours(start, end uint) Option {
 }
 
 // WithInterval ...
-func WithInterval(seconds uint) Option {
+func WithInterval(duration time.Duration) Option {
 	return func(r *Context) {
-		r.interval = seconds
+		r.interval = duration
 	}
 }
 
 // WithLoadInterval ...
-func WithLoadInterval(seconds uint) Option {
+func WithLoadInterval(duration time.Duration) Option {
 	return func(r *Context) {
-		r.loadInterval = seconds
+		r.loadInterval = duration
 	}
 }

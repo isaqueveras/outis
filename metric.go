@@ -23,7 +23,7 @@ type Metrics struct {
 	ID          string        `json:"id"`
 	Initialized time.Time     `json:"initialized"`
 	Terminated  time.Time     `json:"terminated"`
-	Runtime     float64       `json:"runtime"`
+	Latency     float64       `json:"latency"`
 	Routine     RoutineMetric `json:"routine"`
 	Metadata    Metric        `json:"metadata"`
 }

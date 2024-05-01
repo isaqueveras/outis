@@ -1,6 +1,9 @@
 package outis
 
-import "errors"
+import (
+	"errors"
+	"time"
+)
 
 // Context ...
 type Context struct {
@@ -9,8 +12,8 @@ type Context struct {
 	desc         string
 	startHour    uint
 	endHour      uint
-	interval     uint
-	loadInterval uint
+	interval     time.Duration
+	loadInterval time.Duration
 	path         string
 	routine      Routine
 	channel      chan interface{}
@@ -48,12 +51,12 @@ func (ctx *Context) GetPath() string {
 }
 
 // GetInterval ...
-func (ctx *Context) GetInterval() uint {
+func (ctx *Context) GetInterval() time.Duration {
 	return ctx.interval
 }
 
 // GetLoadInterval ...
-func (ctx *Context) GetLoadInterval() uint {
+func (ctx *Context) GetLoadInterval() time.Duration {
 	return ctx.loadInterval
 }
 

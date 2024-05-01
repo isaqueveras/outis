@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"time"
 
 	"github.com/isaqueveras/outis"
 	"github.com/isaqueveras/outis/memory"
@@ -13,9 +14,9 @@ func main() {
 	go watch.Go(
 		outis.WithID("b7504beb-1132-4ced-8813-3525523cac1d"),
 		outis.WithName("Routine 01"),
-		outis.WithInterval(1),
-		outis.WithHours(12, 13),
-		outis.WithLoadInterval(30),
+		outis.WithInterval(time.Microsecond),
+		outis.WithHours(8, 20),
+		outis.WithLoadInterval(time.Second*30),
 		outis.WithRoutine(sendNotification),
 	)
 
