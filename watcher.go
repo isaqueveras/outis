@@ -56,8 +56,8 @@ func (w *Watch) Wait() {
 
 func (w *Watch) Go(opts ...Option) {
 	ctx := &Context{
-		indicator:    make([]Indicator, 0),
-		metric:       make(Metric),
+		indicator:    make([]*indicator, 0),
+		metadata:     make(Metadata),
 		logs:         make([]Log, 0),
 		LoadInterval: 0,
 		L:            w.log,
