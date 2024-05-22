@@ -6,14 +6,18 @@ The outis library helps you create and manage routines, schedule execution time,
 ```go
 package main
 
-import ...
+import (
+  "time"
+
+  "github.com/isaqueveras/outis"
+)
 
 func main() {
   // Initialize Outis to be able to add routines
   watch := outis.Watcher("8b1d6a18-5f3d-4482-a574-35d3965c8783", "v1/example",
-		outis.WithLogger(nil),         // Option to implement logs interface
-		outis.WithOutisInterface(nil), // Option to implement outis interface
-	)
+    outis.WithLogger(nil),         // Option to implement logs interface
+    outis.WithOutisInterface(nil), // Option to implement outis interface
+  )
 
   go watch.Go(
     // Routine identifier to perform concurrency control
@@ -44,7 +48,7 @@ func main() {
         "fcm":       "3p2okrmionfiun2uni3nfin2i3f",
       })
 
-	    ctx.L.Debug("Hello")
+      ctx.Debug("Hello")
     }),
   )
 
