@@ -1,17 +1,10 @@
 package outis
 
-import (
-	"sync"
-	"time"
-)
+import "time"
 
-var metricMutex sync.Mutex
+type Metadata map[string]interface{}
 
-type Metric map[string]interface{}
-
-func (metric Metric) Set(value string, args interface{}) {
-	metricMutex.Lock()
-	defer metricMutex.Unlock()
+func (metric Metadata) Set(value string, args interface{}) {
 	metric[value] = args
 }
 
@@ -22,8 +15,9 @@ type EventMetric struct {
 	FinishedAt time.Time     `json:"finished_at"`
 	Watcher    WatcherMetric `json:"watcher"`
 	Routine    RoutineMetric `json:"routine"`
-	Metadata   Metric        `json:"metadata"`
-	Indicator  []Indicator   `json:"indicators"`
+	Metadata   Metadata      `json:"metadata"`
+	Indicator  []*indicator  `json:"indicators"`
+	Histogram  []*histogram  `json:"histograms"`
 	Log        []Log         `json:"logs"`
 }
 

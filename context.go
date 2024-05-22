@@ -20,10 +20,12 @@ type Context struct {
 	Path         string
 	StartedAt    time.Time
 
-	script    Script
-	metric    Metric
-	indicator []Indicator
-	logs      []Log
+	script   Script
+	metadata Metadata
+	logs     []Log
+
+	histrogram []*histogram
+	indicator  []*indicator
 
 	// L define the log layer interface
 	L Logger
@@ -65,8 +67,8 @@ func (ctx *Context) Panic(message string, args ...interface{}) {
 	})
 }
 
-func (ctx *Context) Metric(key string, args interface{}) {
-	ctx.metric.Set(key, args)
+func (ctx *Context) Metadata(key string, args interface{}) {
+	ctx.metadata.Set(key, args)
 }
 
 func (ctx *Context) reload(ioutis Outis) {
@@ -92,9 +94,10 @@ func (ctx *Context) metrics(w *Watch, now time.Time) {
 		StartedAt:  now,
 		FinishedAt: time.Now(),
 		Latency:    latency,
-		Metadata:   ctx.metric,
+		Metadata:   ctx.metadata,
 		Log:        ctx.logs,
 		Indicator:  ctx.indicator,
+		Histogram:  ctx.histrogram,
 		Watcher: WatcherMetric{
 			ID:        w.id.ToString(),
 			Name:      w.name,
@@ -108,7 +111,8 @@ func (ctx *Context) metrics(w *Watch, now time.Time) {
 		},
 	})
 
-	ctx.logs, ctx.metric, ctx.indicator = []Log{}, Metric{}, []Indicator{}
+	ctx.logs, ctx.metadata, ctx.indicator, ctx.histrogram =
+		[]Log{}, Metadata{}, []*indicator{}, []*histogram{}
 }
 
 func (ctx *Context) isTime(hour int) bool {
