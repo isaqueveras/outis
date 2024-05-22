@@ -10,179 +10,119 @@ import (
 	"time"
 )
 
-// Event ...
-type Event interface{}
-
-// Routine ...
-type Routine func(*Context)
-
-// Option ...
-type Option func(*Context)
-
-// ID ...
 type ID string
 
-// ToString ...
 func (id ID) ToString() string {
 	return string(id)
 }
 
-// Interface ...
-type Interface interface {
-	// Lock ...
-	Lock(ID) (ID, error)
+type Watch struct {
+	id        ID
+	name      string
+	signal    chan os.Signal
+	startedAt time.Time
 
-	// Unlock ...
-	Unlock(ID) error
-
-	// Store ...
-	Store(*Context) error
-
-	// Load ...
-	Load(*Context) error
-
-	// Event ...
-	Event(Event)
+	outis Outis
+	log   Logger
 }
 
-// watch ...
-type watch struct {
-	name    string
-	inter   Interface
-	channel chan interface{}
-	signal  chan os.Signal
-}
+func Watcher(id, name string, opts ...WatcherOption) *Watch {
+	watch := &Watch{
+		id:        ID(id),
+		name:      name,
+		signal:    make(chan os.Signal, 1),
+		log:       setupLogger(),
+		outis:     newOutis(),
+		startedAt: time.Now(),
+	}
 
-// Watcher ...
-func Watcher(name string, ioutis Interface) *watch {
-	watch := &watch{
-		name:    name,
-		inter:   ioutis,
-		channel: make(chan interface{}),
-		signal:  make(chan os.Signal, 1),
+	for _, opt := range opts {
+		if opt == nil {
+			continue
+		}
+		opt(watch)
 	}
 
 	signal.Notify(watch.signal, syscall.SIGINT, syscall.SIGTERM)
-
 	return watch
 }
 
-// Wait ...
-func (w *watch) Wait() {
-	for {
-		select {
-		case <-w.signal:
-			w.inter.Event("closing signal received")
-			return
-		case err := <-w.channel:
-			w.inter.Event(err)
-		}
+func (w *Watch) Wait() {
+	for range w.signal {
+		w.log.Infof("closing signal received")
+		break
 	}
 }
 
-// Go ...
-func (w *watch) Go(opts ...Option) {
+func (w *Watch) Go(opts ...Option) {
 	ctx := &Context{
-		channel:      make(chan interface{}),
-		interval:     time.Minute,
-		metric:       Metric{},
-		loadInterval: 0,
+		indicator:    make([]Indicator, 0),
+		metric:       make(Metric),
+		logs:         make([]Log, 0),
+		LoadInterval: 0,
+		L:            w.log,
+		Interval:     time.Minute,
+		StartedAt:    time.Now(),
 	}
 
-	ctx.With(opts...)
+	for _, opt := range opts {
+		if opt == nil {
+			continue
+		}
+		opt(ctx)
+	}
 
 	if err := ctx.validate(); err != nil {
-		w.inter.Event(err)
+		ctx.Error("%v", err)
 		return
 	}
 
-	info := runtime.FuncForPC(reflect.ValueOf(ctx.routine).Pointer())
+	if err := w.outis.Init(ctx); err != nil {
+		ctx.Error("%v", err)
+		return
+	}
+
+	info := runtime.FuncForPC(reflect.ValueOf(ctx.script).Pointer())
 	file, line := info.FileLine(info.Entry())
-	ctx.path = fmt.Sprintf("%s:%v", file, line)
+	ctx.Path = fmt.Sprintf("%s:%v", file, line)
 
-	if err := w.inter.Store(ctx); err != nil {
-		w.inter.Event(err)
-		return
-	}
-
-	if ctx.loadInterval != 0 {
-		go ctx.reload(w.inter)
+	if ctx.LoadInterval != 0 {
+		go ctx.reload(w.outis)
 	}
 
 	defer func() {
 		if r := recover(); r != nil {
-			w.inter.Event(fmt.Errorf("PANIC: %v", r))
+			ctx.Error("%v", r)
 		}
 	}()
 
-	go func() {
-		for value := range ctx.channel {
-			w.inter.Event(value)
-		}
-	}()
-
-	ticker := time.NewTicker(ctx.interval)
+	ticker := time.NewTicker(ctx.Interval)
 	for range ticker.C {
 		if !ctx.isTime(time.Now().Hour()) {
 			continue
 		}
 
-		if err := w.process(ctx); err != nil {
-			w.inter.Event(err)
+		now := time.Now()
+		if err := w.outis.Before(ctx); err != nil {
+			ctx.Error(err.Error())
 			continue
 		}
 
-		ticker.Reset(ctx.interval)
-	}
-}
+		func(script Script) {
+			defer func() {
+				if err := recover(); err != nil {
+					ctx.Error("%v", err)
+				}
+			}()
+			script(ctx)
+		}(ctx.script)
 
-func (w *watch) process(ctx *Context) error {
-	now := time.Now()
-
-	defer func() {
-		if r := recover(); r != nil {
-			ctx.Error(fmt.Errorf("PANIC: %v", r))
+		if err := w.outis.After(ctx); err != nil {
+			ctx.Error(err.Error())
+			continue
 		}
-	}()
 
-	id, err := w.inter.Lock(ctx.id)
-	if err != nil {
-		return err
-	}
-
-	w.inter.Event(fmt.Sprintf(`[INITIALIZED] routine '%s' with id '%s'`, ctx.GetName(), id))
-	ctx.routine(ctx)
-
-	latency := time.Since(now).Seconds()
-	w.inter.Event(Metrics{
-		ID:          id.ToString(),
-		Initialized: now,
-		Terminated:  time.Now(),
-		Latency:     latency,
-		Metadata:    ctx.metric,
-		Routine: RoutineMetric{
-			ID:   ctx.GetID().ToString(),
-			Name: ctx.GetName(),
-			Path: ctx.path,
-		},
-	})
-
-	ctx.metric = Metric{}
-	if err = w.inter.Unlock(id); err != nil {
-		return err
-	}
-
-	w.inter.Event(fmt.Sprintf(`[TERMINATED] routine '%s' with id '%s' in %v seconds`, ctx.GetName(), id, latency))
-	return nil
-}
-
-func (ctx *Context) reload(ioutis Interface) {
-	ticker := time.NewTicker(ctx.loadInterval)
-	for range ticker.C {
-		if err := ioutis.Load(ctx); err != nil {
-			ioutis.Event(err)
-		}
-		ticker.Reset(ctx.loadInterval)
-		ioutis.Event(fmt.Sprintf(`[UPDATED] routine '%s' with id '%s' has been updated`, ctx.GetName(), ctx.GetID()))
+		ctx.metrics(w, now)
+		ticker.Reset(ctx.Interval)
 	}
 }
