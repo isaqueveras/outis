@@ -10,7 +10,10 @@ import ...
 
 func main() {
   // Initialize Outis to be able to add routines
-  watch := outis.Watcher(utils.NewOutis())
+  watch := outis.Watcher("8b1d6a18-5f3d-4482-a574-35d3965c8783", "v1/example",
+		outis.WithLogger(nil),         // Option to implement logs interface
+		outis.WithOutisInterface(nil), // Option to implement outis interface
+	)
 
   go watch.Go(
     // Routine identifier to perform concurrency control
@@ -30,9 +33,9 @@ func main() {
     outis.WithLoadInterval(time.Second * 30),
 
     // Here the script function that will be executed will be passed
-    outis.WithRoutine(func(ctx *outis.Context) {
+    outis.WithScript(func(ctx *outis.Context) {
       ctx.Info("this is an information message")
-      ctx.Error(errors.New("this is an error message"))
+      ctx.Error("error: %v", errors.New("this is an error message"))
 
       ctx.Metric("client_ids", []int64{234234})
       ctx.Metric("notification", outis.Metric{
@@ -40,53 +43,12 @@ func main() {
         "message":   "Hi, we are notifying you.",
         "fcm":       "3p2okrmionfiun2uni3nfin2i3f",
       })
+
+	    ctx.L.Debug("Hello")
     }),
   )
 
   // Method that maintains routine in the process
   watch.Wait()
 }
-
-```
-
-## Implements the Interface
-It is necessary to implement the Interface interface to initialize Watcher.
-
-```go
-package utils
-
-import ...
-
-type repo struct{}
-
-// NewOutis initializes the implementation of the Interface interface.
-//
-// It is recommended to create a role for each environment,
-// one for development and one for production.
-//
-// For development you can implement the Lock and Unlock method
-// to use in-memory control and production can be done using
-// a redis database or a central server.
-func NewOutis() outis.Interface {
-  return &repo{}
-}
-
-// Lock defines the method by which concurrency
-// blocking will be implemented
-func (*repo) Lock(outis.ID) (outis.ID, error) {}
-
-// Unlock defines the method by which concurrency
-// unblocking will be implemented
-func (*repo) Unlock(outis.ID) error {}
-
-// Store defines the method for saving
-// the routine's initial information
-func (*repo) Store(*outis.Context) error {}
-
-// Load defines the method to fetch updated
-// information from the routine
-func (*repo) Load(*outis.Context) error {}
-
-// Event defines the method for handling events
-func (*repo) Event(outis.Event) {}
 ```
