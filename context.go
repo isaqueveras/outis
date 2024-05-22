@@ -2,101 +2,137 @@ package outis
 
 import (
 	"errors"
+	"fmt"
 	"time"
 )
 
-// Context ...
+type Script func(*Context)
+
 type Context struct {
-	id           ID
-	name         string
-	desc         string
-	startHour    uint
-	endHour      uint
-	interval     time.Duration
-	loadInterval time.Duration
-	path         string
-	routine      Routine
-	channel      chan interface{}
-	metric       Metric
+	Id           ID
+	RoutineID    ID
+	Name         string
+	Desc         string
+	StartHour    uint
+	EndHour      uint
+	Interval     time.Duration
+	LoadInterval time.Duration
+	Path         string
+	StartedAt    time.Time
+
+	script    Script
+	metric    Metric
+	indicator []Indicator
+	logs      []Log
+
+	// L define the log layer interface
+	L Logger
 }
 
-// GetID ...
-func (ctx *Context) GetID() ID {
-	return ctx.id
+func (ctx *Context) Error(message string, args ...interface{}) {
+	ctx.L.Errorf(message, args...)
+	ctx.logs = append(ctx.logs, Log{
+		Message:   fmt.Sprintf(message, args...),
+		Level:     levelLogError,
+		Timestamp: time.Now(),
+	})
 }
 
-// GetName ...
-func (ctx *Context) GetName() string {
-	return ctx.name
+func (ctx *Context) Info(message string, args ...interface{}) {
+	ctx.L.Infof(message, args...)
+	ctx.logs = append(ctx.logs, Log{
+		Message:   fmt.Sprintf(message, args...),
+		Level:     levelLogInfo,
+		Timestamp: time.Now(),
+	})
 }
 
-// GetDesc ...
-func (ctx *Context) GetDesc() string {
-	return ctx.desc
+func (ctx *Context) Debug(message string, args ...interface{}) {
+	ctx.L.Debugf(message, args...)
+	ctx.logs = append(ctx.logs, Log{
+		Message:   fmt.Sprintf(message, args...),
+		Level:     levelLogDebug,
+		Timestamp: time.Now(),
+	})
 }
 
-// GetStartHour ...
-func (ctx *Context) GetStartHour() uint {
-	return ctx.startHour
+func (ctx *Context) Panic(message string, args ...interface{}) {
+	ctx.L.Panicf(message, args...)
+	ctx.logs = append(ctx.logs, Log{
+		Message:   fmt.Sprintf(message, args...),
+		Level:     levelLogPanic,
+		Timestamp: time.Now(),
+	})
 }
 
-// GetEndHour ...
-func (ctx *Context) GetEndHour() uint {
-	return ctx.endHour
+func (ctx *Context) Metric(key string, args interface{}) {
+	ctx.metric.Set(key, args)
 }
 
-// GetPath ...
-func (ctx *Context) GetPath() string {
-	return ctx.path
+func (ctx *Context) reload(ioutis Outis) {
+	ticker := time.NewTicker(ctx.LoadInterval)
+	for range ticker.C {
+		if err := ioutis.Reload(ctx); err != nil {
+			ctx.L.Errorf(err.Error())
+		}
+
+		ticker.Reset(ctx.LoadInterval)
+		ctx.Info("script '%s' (rid: %s) has been updated", ctx.Name, ctx.RoutineID)
+	}
 }
 
-// GetInterval ...
-func (ctx *Context) GetInterval() time.Duration {
-	return ctx.interval
-}
+func (ctx *Context) metrics(w *Watch, now time.Time) {
+	latency := time.Since(now)
+	if latency > time.Minute {
+		latency = latency.Truncate(time.Second)
+	}
 
-// GetLoadInterval ...
-func (ctx *Context) GetLoadInterval() time.Duration {
-	return ctx.loadInterval
-}
+	w.outis.Event(ctx, EventMetric{
+		ID:         ctx.Id.ToString(),
+		StartedAt:  now,
+		FinishedAt: time.Now(),
+		Latency:    latency,
+		Metadata:   ctx.metric,
+		Log:        ctx.logs,
+		Indicator:  ctx.indicator,
+		Watcher: WatcherMetric{
+			ID:        w.id.ToString(),
+			Name:      w.name,
+			StartedAt: w.startedAt,
+		},
+		Routine: RoutineMetric{
+			ID:        ctx.RoutineID.ToString(),
+			Name:      ctx.Name,
+			Path:      ctx.Path,
+			StartedAt: ctx.StartedAt,
+		},
+	})
 
-// Error ...
-func (ctx *Context) Error(e error) {
-	ctx.channel <- e
-}
-
-// Info ...
-func (ctx *Context) Info(msg string) {
-	ctx.channel <- msg
-}
-
-// Metric ...
-func (ctx *Context) Metric(value string, args interface{}) {
-	ctx.metric.Set(value, args)
+	ctx.logs, ctx.metric, ctx.indicator = []Log{}, Metric{}, []Indicator{}
 }
 
 func (ctx *Context) isTime(hour int) bool {
-	if ctx.startHour == 0 && ctx.endHour == 0 {
+	if ctx.StartHour == 0 && ctx.EndHour == 0 {
 		return true
 	}
 
-	if ctx.startHour <= ctx.endHour {
-		return (hour >= int(ctx.startHour) && hour <= int(ctx.endHour))
+	if ctx.StartHour <= ctx.EndHour {
+		return (hour >= int(ctx.StartHour) && hour <= int(ctx.EndHour))
 	}
 
-	return (hour >= int(ctx.startHour) || hour <= int(ctx.endHour))
+	return (hour >= int(ctx.StartHour) || hour <= int(ctx.EndHour))
 }
 
 func (ctx *Context) validate() error {
-	if ctx.GetID() == "" {
+	if ctx.RoutineID == "" {
 		return errors.New("the routine id is required")
 	}
 
-	if ctx.GetName() == "" {
+	if ctx.Name == "" {
 		return errors.New("the routine name is required")
 	}
 
-	if ctx.routine == nil {
+	if ctx.script == nil {
 		return errors.New("the routine is required")
 	}
 

@@ -2,61 +2,56 @@ package outis
 
 import "time"
 
-// With ...
-func (ctx *Context) With(opts ...Option) {
-	for _, opt := range opts {
-		if opt == nil {
-			continue
-		}
-		opt(ctx)
-	}
-}
+type Option func(*Context)
 
-// WithName ...
 func WithName(name string) Option {
 	return func(r *Context) {
-		r.name = name
+		r.Name = name
 	}
 }
 
-// WithDesc ...
 func WithDesc(desc string) Option {
 	return func(r *Context) {
-		r.desc = desc
+		r.Desc = desc
 	}
 }
 
-// WithID ...
 func WithID(id ID) Option {
 	return func(r *Context) {
-		r.id = id
+		r.RoutineID = id
 	}
 }
 
-// WithRoutine ...
-func WithRoutine(routine Routine) Option {
+func WithScript(routine Script) Option {
 	return func(r *Context) {
-		r.routine = routine
+		r.script = routine
 	}
 }
 
-// WithHours ...
 func WithHours(start, end uint) Option {
 	return func(r *Context) {
-		r.startHour, r.endHour = start, end
+		r.StartHour, r.EndHour = start, end
 	}
 }
 
-// WithInterval ...
 func WithInterval(duration time.Duration) Option {
 	return func(r *Context) {
-		r.interval = duration
+		r.Interval = duration
 	}
 }
 
-// WithLoadInterval ...
 func WithLoadInterval(duration time.Duration) Option {
 	return func(r *Context) {
-		r.loadInterval = duration
+		r.LoadInterval = duration
 	}
+}
+
+type WatcherOption func(*Watch)
+
+func WithLogger(logger Logger) WatcherOption {
+	return func(r *Watch) { r.log = logger }
+}
+
+func WithOutisInterface(outis Outis) WatcherOption {
+	return func(r *Watch) { r.outis = outis }
 }

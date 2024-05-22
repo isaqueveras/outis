@@ -5,32 +5,37 @@ import (
 	"time"
 )
 
-// metricMutex ...
 var metricMutex sync.Mutex
 
-// Metric
 type Metric map[string]interface{}
 
-// Set ...
 func (metric Metric) Set(value string, args interface{}) {
 	metricMutex.Lock()
 	defer metricMutex.Unlock()
 	metric[value] = args
 }
 
-// Metrics ...
-type Metrics struct {
-	ID          string        `json:"id"`
-	Initialized time.Time     `json:"initialized"`
-	Terminated  time.Time     `json:"terminated"`
-	Latency     float64       `json:"latency"`
-	Routine     RoutineMetric `json:"routine"`
-	Metadata    Metric        `json:"metadata"`
+type EventMetric struct {
+	ID         string        `json:"id"`
+	Latency    time.Duration `json:"latency"`
+	StartedAt  time.Time     `json:"started_at"`
+	FinishedAt time.Time     `json:"finished_at"`
+	Watcher    WatcherMetric `json:"watcher"`
+	Routine    RoutineMetric `json:"routine"`
+	Metadata   Metric        `json:"metadata"`
+	Indicator  []Indicator   `json:"indicators"`
+	Log        []Log         `json:"logs"`
 }
 
-// RoutineMetric ...
 type RoutineMetric struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	Path string `json:"path"`
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	Path      string    `json:"path"`
+	StartedAt time.Time `json:"started_at"`
+}
+
+type WatcherMetric struct {
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	StartedAt time.Time `json:"started_at"`
 }
