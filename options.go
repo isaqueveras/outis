@@ -30,7 +30,7 @@ func WithScript(routine Script) Option {
 
 func WithHours(start, end uint) Option {
 	return func(r *Context) {
-		r.StartHour, r.EndHour = start, end
+		r.Start, r.End = start, end
 	}
 }
 

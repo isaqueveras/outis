@@ -22,7 +22,7 @@ type EventMetric struct {
 }
 
 type RoutineMetric struct {
-	ID        string    `json:"id"`
+	ID        string    `json:"routine_id"`
 	Name      string    `json:"name"`
 	Path      string    `json:"path"`
 	StartedAt time.Time `json:"started_at"`

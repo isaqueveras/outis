@@ -17,23 +17,23 @@ func (id ID) ToString() string {
 }
 
 type Watch struct {
-	id        ID
-	name      string
-	signal    chan os.Signal
-	startedAt time.Time
+	Id    ID        `json:"id"`
+	Name  string    `json:"name"`
+	RunAt time.Time `json:"run_at"`
 
-	outis Outis
-	log   Logger
+	signal chan os.Signal
+	outis  Outis
+	log    Logger
 }
 
 func Watcher(id, name string, opts ...WatcherOption) *Watch {
 	watch := &Watch{
-		id:        ID(id),
-		name:      name,
-		signal:    make(chan os.Signal, 1),
-		log:       setupLogger(),
-		outis:     newOutis(),
-		startedAt: time.Now(),
+		Id:     ID(id),
+		Name:   name,
+		signal: make(chan os.Signal, 1),
+		log:    setupLogger(),
+		outis:  newOutis(),
+		RunAt:  time.Now(),
 	}
 
 	for _, opt := range opts {
@@ -50,19 +50,20 @@ func Watcher(id, name string, opts ...WatcherOption) *Watch {
 func (w *Watch) Wait() {
 	for range w.signal {
 		w.log.Infof("closing signal received")
-		break
+		return
 	}
 }
 
 func (w *Watch) Go(opts ...Option) {
 	ctx := &Context{
+		Watcher:      *w,
 		indicator:    make([]*indicator, 0),
 		metadata:     make(Metadata),
 		logs:         make([]Log, 0),
 		LoadInterval: 0,
 		L:            w.log,
 		Interval:     time.Minute,
-		StartedAt:    time.Now(),
+		RunAt:        time.Now(),
 	}
 
 	for _, opt := range opts {
@@ -77,17 +78,17 @@ func (w *Watch) Go(opts ...Option) {
 		return
 	}
 
-	if err := w.outis.Init(ctx); err != nil {
-		ctx.Error("%v", err)
-		return
-	}
-
 	info := runtime.FuncForPC(reflect.ValueOf(ctx.script).Pointer())
 	file, line := info.FileLine(info.Entry())
 	ctx.Path = fmt.Sprintf("%s:%v", file, line)
 
 	if ctx.LoadInterval != 0 {
 		go ctx.reload(w.outis)
+	}
+
+	if err := w.outis.Init(ctx); err != nil {
+		ctx.Error("%v", err)
+		return
 	}
 
 	defer func() {
