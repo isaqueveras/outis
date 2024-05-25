@@ -29,7 +29,7 @@ type RoutineMetric struct {
 }
 
 type WatcherMetric struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name"`
-	StartedAt time.Time `json:"started_at"`
+	ID    string    `json:"id"`
+	Name  string    `json:"name"`
+	RunAt time.Time `json:"run_at"`
 }

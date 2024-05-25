@@ -1,6 +1,7 @@
 package outis
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -30,6 +31,8 @@ type Context struct {
 
 	// L define the log layer interface
 	L Logger `json:"-"`
+
+	context.Context
 }
 
 func (ctx *Context) Error(message string, args ...interface{}) {
@@ -100,9 +103,9 @@ func (ctx *Context) metrics(w *Watch, now time.Time) {
 		Indicator:  ctx.indicator,
 		Histogram:  ctx.histrogram,
 		Watcher: WatcherMetric{
-			ID:        w.Id.ToString(),
-			Name:      w.Name,
-			StartedAt: w.RunAt,
+			ID:    w.Id.ToString(),
+			Name:  w.Name,
+			RunAt: w.RunAt,
 		},
 		Routine: RoutineMetric{
 			ID:        ctx.RoutineID.ToString(),
