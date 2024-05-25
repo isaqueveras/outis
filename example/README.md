@@ -2,20 +2,20 @@
 
 ```json
 {
-  "id": "3463095254098643911",
-  "latency": 48514700,
-  "started_at": "2024-05-22T19:34:01.072143938-03:00",
-  "finished_at": "2024-05-22T19:34:01.120658802-03:00",
+  "id": "5388751619798277776",
+  "latency": 574336154,
+  "started_at": "2024-05-24T22:19:40.390569286-03:00",
+  "finished_at": "2024-05-24T22:19:40.96490561-03:00",
   "watcher": {
-    "id": "8b1d6a18-5f3d-4482-a574-35d3965c8783",
-    "name": "v1/example",
-    "started_at": "2024-05-22T19:33:58.178673456-03:00"
+    "id": "79e4b3cb-f280-4511-bf95-d4157584baba",
+    "name": "/v1/example/outis",
+    "started_at": "2024-05-24T22:19:39.389977699-03:00"
   },
   "routine": {
-    "id": "0b2d07ca-e3db-478a-9455-d5f476ac8d37",
-    "name": "Example routine",
-    "path": "/outis/example/main.go:23",
-    "started_at": "2024-05-22T19:33:58.17873695-03:00"
+    "routine_id": "f92f61a9-2ddc-4025-af64-212bfda3e151",
+    "name": "Teste da minha rotina",
+    "path": "/outis/example/main.go:24",
+    "started_at": "2024-05-24T22:19:39.390018896-03:00"
   },
   "metadata": {
     "client": {
@@ -45,7 +45,7 @@
     {
       "key": "customers_notified",
       "value": 13.21,
-      "created_at": "2024-05-22T19:34:01.108226823-03:00"
+      "created_at": "2024-05-24T22:19:40.782066655-03:00"
     }
   ],
   "histograms": [
@@ -53,24 +53,24 @@
       "key": "problems_resolved",
       "values": [
         {
-          "value": 10,
-          "created_at": "2024-05-22T19:34:01.082507408-03:00"
+          "value": 48,
+          "created_at": "2024-05-24T22:19:40.438977176-03:00"
         },
         {
-          "value": 3,
-          "created_at": "2024-05-22T19:34:01.085635542-03:00"
+          "value": 107,
+          "created_at": "2024-05-24T22:19:40.546351975-03:00"
         },
         {
-          "value": 10,
-          "created_at": "2024-05-22T19:34:01.095840753-03:00"
+          "value": 101,
+          "created_at": "2024-05-24T22:19:40.647606016-03:00"
         },
         {
-          "value": 2,
-          "created_at": "2024-05-22T19:34:01.098013473-03:00"
+          "value": 100,
+          "created_at": "2024-05-24T22:19:40.747834238-03:00"
         },
         {
-          "value": 10,
-          "created_at": "2024-05-22T19:34:01.108188919-03:00"
+          "value": 34,
+          "created_at": "2024-05-24T22:19:40.782038289-03:00"
         }
       ]
     },
@@ -78,16 +78,16 @@
       "key": "canceled_processes",
       "values": [
         {
-          "value": 8,
-          "created_at": "2024-05-22T19:34:01.116398926-03:00"
+          "value": 16,
+          "created_at": "2024-05-24T22:19:40.798237357-03:00"
         },
         {
-          "value": 4,
-          "created_at": "2024-05-22T19:34:01.120625851-03:00"
+          "value": 61,
+          "created_at": "2024-05-24T22:19:40.859567254-03:00"
         },
         {
-          "value": 0,
-          "created_at": "2024-05-22T19:34:01.120638405-03:00"
+          "value": 105,
+          "created_at": "2024-05-24T22:19:40.964847216-03:00"
         }
       ]
     }
@@ -95,18 +95,23 @@
   "logs": [
     {
       "level": "INFO",
-      "message": "script 'Example routine' (rid: 0b2d07ca-e3db-478a-9455-d5f476ac8d37, id: 3463095254098643911) initialized",
-      "timestamp": "2024-05-22T19:34:01.072212527-03:00"
+      "message": "script 'Teste da minha rotina' (rid: f92f61a9-2ddc-4025-af64-212bfda3e151) initialized",
+      "timestamp": "2024-05-24T22:19:39.390109993-03:00"
+    },
+    {
+      "level": "INFO",
+      "message": "script 'Teste da minha rotina' (rid: f92f61a9-2ddc-4025-af64-212bfda3e151, id: 5388751619798277776) initialized",
+      "timestamp": "2024-05-24T22:19:40.390630463-03:00"
     },
     {
       "level": "DEBUG",
       "message": "Hello 02",
-      "timestamp": "2024-05-22T19:34:01.108226308-03:00"
+      "timestamp": "2024-05-24T22:19:40.782066143-03:00"
     },
     {
       "level": "INFO",
-      "message": "script 'Example routine' (rid: 0b2d07ca-e3db-478a-9455-d5f476ac8d37, id: 3463095254098643911) finished",
-      "timestamp": "2024-05-22T19:34:01.120658155-03:00"
+      "message": "script 'Teste da minha rotina' (rid: f92f61a9-2ddc-4025-af64-212bfda3e151, id: 5388751619798277776) finished",
+      "timestamp": "2024-05-24T22:19:40.96490507-03:00"
     }
   ]
 }
