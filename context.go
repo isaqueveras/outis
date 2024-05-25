@@ -9,16 +9,17 @@ import (
 type Script func(*Context)
 
 type Context struct {
-	Id           ID
-	RoutineID    ID
-	Name         string
-	Desc         string
-	StartHour    uint
-	EndHour      uint
-	Interval     time.Duration
-	LoadInterval time.Duration
-	Path         string
-	StartedAt    time.Time
+	Id           ID            `json:"id,omitempty"`
+	RoutineID    ID            `json:"routine_id,omitempty"`
+	Name         string        `json:"name,omitempty"`
+	Desc         string        `json:"desc,omitempty"`
+	Start        uint          `json:"start,omitempty"`
+	End          uint          `json:"end,omitempty"`
+	Interval     time.Duration `json:"interval,omitempty"`
+	LoadInterval time.Duration `json:"load_interval,omitempty"`
+	Path         string        `json:"path,omitempty"`
+	RunAt        time.Time     `json:"run_at,omitempty"`
+	Watcher      Watch         `json:"-"`
 
 	script   Script
 	metadata Metadata
@@ -28,7 +29,7 @@ type Context struct {
 	indicator  []*indicator
 
 	// L define the log layer interface
-	L Logger
+	L Logger `json:"-"`
 }
 
 func (ctx *Context) Error(message string, args ...interface{}) {
@@ -99,15 +100,15 @@ func (ctx *Context) metrics(w *Watch, now time.Time) {
 		Indicator:  ctx.indicator,
 		Histogram:  ctx.histrogram,
 		Watcher: WatcherMetric{
-			ID:        w.id.ToString(),
-			Name:      w.name,
-			StartedAt: w.startedAt,
+			ID:        w.Id.ToString(),
+			Name:      w.Name,
+			StartedAt: w.RunAt,
 		},
 		Routine: RoutineMetric{
 			ID:        ctx.RoutineID.ToString(),
 			Name:      ctx.Name,
 			Path:      ctx.Path,
-			StartedAt: ctx.StartedAt,
+			StartedAt: ctx.RunAt,
 		},
 	})
 
@@ -116,15 +117,15 @@ func (ctx *Context) metrics(w *Watch, now time.Time) {
 }
 
 func (ctx *Context) isTime(hour int) bool {
-	if ctx.StartHour == 0 && ctx.EndHour == 0 {
+	if ctx.Start == 0 && ctx.End == 0 {
 		return true
 	}
 
-	if ctx.StartHour <= ctx.EndHour {
-		return (hour >= int(ctx.StartHour) && hour <= int(ctx.EndHour))
+	if ctx.Start <= ctx.End {
+		return (hour >= int(ctx.Start) && hour <= int(ctx.End))
 	}
 
-	return (hour >= int(ctx.StartHour) || hour <= int(ctx.EndHour))
+	return (hour >= int(ctx.Start) || hour <= int(ctx.End))
 }
 
 func (ctx *Context) validate() error {
