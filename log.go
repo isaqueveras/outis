@@ -23,7 +23,7 @@ type Log struct {
 }
 
 func setupLogger() Logger {
-	return stdLogger{log.New(os.Stderr, "outis: ", log.LstdFlags|log.Lmsgprefix)}
+	return stdLogger{log.New(os.Stderr, "", log.LstdFlags|log.Lmsgprefix)}
 }
 
 type stdLogger struct{ log *log.Logger }

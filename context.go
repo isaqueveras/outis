@@ -88,16 +88,11 @@ func (ctx *Context) reload(ioutis Outis) {
 }
 
 func (ctx *Context) metrics(w *Watch, now time.Time) {
-	latency := time.Since(now)
-	if latency > time.Minute {
-		latency = latency.Truncate(time.Second)
-	}
-
 	w.outis.Event(ctx, EventMetric{
 		ID:         ctx.Id.ToString(),
 		StartedAt:  now,
 		FinishedAt: time.Now(),
-		Latency:    latency,
+		Latency:    time.Since(now),
 		Metadata:   ctx.metadata,
 		Log:        ctx.logs,
 		Indicator:  ctx.indicator,
