@@ -3,33 +3,14 @@ package outis
 import (
 	"log"
 	"os"
-	"time"
 )
 
-type levelLog string
+func setupLogger() ILogger { return logger{log.New(os.Stderr, "", log.LstdFlags)} }
 
-const (
-	levelLogInfo  levelLog = "INFO"
-	levelLogError levelLog = "EROR"
-	levelLogDebug levelLog = "DEBUG"
-	levelLogPanic levelLog = "PANIC"
-)
+type logger struct{ log *log.Logger }
 
-type Log struct {
-	Level     levelLog  `json:"level"`
-	Message   string    `json:"message"`
-	Timestamp time.Time `json:"timestamp"`
-	Path      string    `json:"path,omitempty"`
-}
-
-func setupLogger() Logger {
-	return stdLogger{log.New(os.Stderr, "", log.LstdFlags|log.Lmsgprefix)}
-}
-
-type stdLogger struct{ log *log.Logger }
-
-func (l stdLogger) Infof(format string, v ...interface{})  { l.log.Printf(format, v...) }
-func (l stdLogger) Warnf(format string, v ...interface{})  { l.log.Printf(format, v...) }
-func (l stdLogger) Errorf(format string, v ...interface{}) { l.log.Printf(format, v...) }
-func (l stdLogger) Debugf(format string, v ...interface{}) { l.log.Printf(format, v...) }
-func (l stdLogger) Panicf(format string, v ...interface{}) { l.log.Printf(format, v...) }
+func (l logger) Infof(format string, v ...interface{})  { l.log.Printf(format, v...) }
+func (l logger) Warnf(format string, v ...interface{})  { l.log.Printf(format, v...) }
+func (l logger) Errorf(format string, v ...interface{}) { l.log.Printf(format, v...) }
+func (l logger) Debugf(format string, v ...interface{}) { l.log.Printf(format, v...) }
+func (l logger) Panicf(format string, v ...interface{}) { l.log.Printf(format, v...) }
