@@ -23,7 +23,7 @@ type Context struct {
 	latency    time.Duration
 	histrogram []*histogram
 	indicator  []*indicator
-	log        ILogger `json:"-"`
+	log        ILogger
 }
 
 // GetLatency get script execution latency (in seconds)
@@ -32,23 +32,28 @@ func (ctx *Context) GetLatency() float64 {
 }
 
 // Error creates a new error message
-func (ctx *Context) Error(msg string) {
-	ctx.log.Errorf(msg)
+func (ctx *Context) Error(msg string, v ...interface{}) {
+	ctx.log.Errorf(msg, v...)
 }
 
 // Info creates a new info message
-func (ctx *Context) Info(msg string) {
-	ctx.log.Infof(msg)
+func (ctx *Context) Info(msg string, v ...interface{}) {
+	ctx.log.Infof(msg, v...)
 }
 
 // Debug creates a new debug message
-func (ctx *Context) Debug(msg string) {
-	ctx.log.Debugf(msg)
+func (ctx *Context) Debug(msg string, v ...interface{}) {
+	ctx.log.Debugf(msg, v...)
+}
+
+// Warn creates a new warn message
+func (ctx *Context) Warn(msg string, v ...interface{}) {
+	ctx.log.Warnf(msg, v...)
 }
 
 // Panic creates a new panic message
-func (ctx *Context) Panic(msg string) {
-	ctx.log.Panicf(msg)
+func (ctx *Context) Panic(msg string, v ...interface{}) {
+	ctx.log.Panicf(msg, v...)
 }
 
 // Metadata method for adding data to routine metadata
