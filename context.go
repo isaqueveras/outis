@@ -1,90 +1,59 @@
 package outis
 
 import (
-	"context"
 	"errors"
-	"fmt"
 	"time"
 )
 
-type Script func(*Context)
-
+// Context defines the data structure of the routine context
 type Context struct {
-	Id           ID            `json:"id,omitempty"`
-	RoutineID    ID            `json:"routine_id,omitempty"`
-	Name         string        `json:"name,omitempty"`
-	Desc         string        `json:"desc,omitempty"`
-	Start        uint          `json:"start,omitempty"`
-	End          uint          `json:"end,omitempty"`
-	Interval     time.Duration `json:"interval,omitempty"`
-	LoadInterval time.Duration `json:"load_interval,omitempty"`
-	Path         string        `json:"path,omitempty"`
-	RunAt        time.Time     `json:"run_at,omitempty"`
-	Watcher      Watch         `json:"-"`
+	Id        ID            `json:"id,omitempty"`
+	RoutineID ID            `json:"routine_id,omitempty"`
+	Name      string        `json:"name,omitempty"`
+	Desc      string        `json:"desc,omitempty"`
+	Start     uint          `json:"start,omitempty"`
+	End       uint          `json:"end,omitempty"`
+	Interval  time.Duration `json:"interval,omitempty"`
+	Path      string        `json:"path,omitempty"`
+	RunAt     time.Time     `json:"run_at,omitempty"`
+	Watcher   Watch         `json:"-"`
 
-	script   Script
-	metadata Metadata
-	logs     []Log
-
+	script     func(*Context) error
+	metadata   Metadata
+	latency    time.Duration
 	histrogram []*histogram
 	indicator  []*indicator
-
-	// L define the log layer interface
-	L Logger `json:"-"`
-
-	context.Context
+	log        ILogger `json:"-"`
 }
 
-func (ctx *Context) Error(message string, args ...interface{}) {
-	ctx.L.Errorf(message, args...)
-	ctx.logs = append(ctx.logs, Log{
-		Message:   fmt.Sprintf(message, args...),
-		Level:     levelLogError,
-		Timestamp: time.Now(),
-	})
+// GetLatency get script execution latency (in seconds)
+func (ctx *Context) GetLatency() float64 {
+	return ctx.latency.Seconds()
 }
 
-func (ctx *Context) Info(message string, args ...interface{}) {
-	ctx.L.Infof(message, args...)
-	ctx.logs = append(ctx.logs, Log{
-		Message:   fmt.Sprintf(message, args...),
-		Level:     levelLogInfo,
-		Timestamp: time.Now(),
-	})
+// Error creates a new error message
+func (ctx *Context) Error(msg string) {
+	ctx.log.Errorf(msg)
 }
 
-func (ctx *Context) Debug(message string, args ...interface{}) {
-	ctx.L.Debugf(message, args...)
-	ctx.logs = append(ctx.logs, Log{
-		Message:   fmt.Sprintf(message, args...),
-		Level:     levelLogDebug,
-		Timestamp: time.Now(),
-	})
+// Info creates a new info message
+func (ctx *Context) Info(msg string) {
+	ctx.log.Infof(msg)
 }
 
-func (ctx *Context) Panic(message string, args ...interface{}) {
-	ctx.L.Panicf(message, args...)
-	ctx.logs = append(ctx.logs, Log{
-		Message:   fmt.Sprintf(message, args...),
-		Level:     levelLogPanic,
-		Timestamp: time.Now(),
-	})
+// Debug creates a new debug message
+func (ctx *Context) Debug(msg string) {
+	ctx.log.Debugf(msg)
 }
 
+// Panic creates a new panic message
+func (ctx *Context) Panic(msg string) {
+	ctx.log.Panicf(msg)
+}
+
+// Metadata method for adding data to routine metadata
 func (ctx *Context) Metadata(key string, args interface{}) {
 	ctx.metadata.Set(key, args)
-}
-
-func (ctx *Context) reload(ioutis Outis) {
-	ticker := time.NewTicker(ctx.LoadInterval)
-	for range ticker.C {
-		if err := ioutis.Reload(ctx); err != nil {
-			ctx.L.Errorf(err.Error())
-		}
-
-		ticker.Reset(ctx.LoadInterval)
-		ctx.Info("script '%s' (rid: %s) has been updated", ctx.Name, ctx.RoutineID)
-	}
 }
 
 func (ctx *Context) metrics(w *Watch, now time.Time) {
@@ -94,7 +63,6 @@ func (ctx *Context) metrics(w *Watch, now time.Time) {
 		FinishedAt: time.Now(),
 		Latency:    time.Since(now),
 		Metadata:   ctx.metadata,
-		Log:        ctx.logs,
 		Indicator:  ctx.indicator,
 		Histogram:  ctx.histrogram,
 		Watcher: WatcherMetric{
@@ -110,8 +78,7 @@ func (ctx *Context) metrics(w *Watch, now time.Time) {
 		},
 	})
 
-	ctx.logs, ctx.metadata, ctx.indicator, ctx.histrogram =
-		[]Log{}, Metadata{}, []*indicator{}, []*histogram{}
+	ctx.metadata, ctx.indicator, ctx.histrogram = Metadata{}, []*indicator{}, []*histogram{}
 }
 
 func (ctx *Context) isTime(hour int) bool {

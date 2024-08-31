@@ -18,7 +18,6 @@ type EventMetric struct {
 	Metadata   Metadata      `json:"metadata"`
 	Indicator  []*indicator  `json:"indicators"`
 	Histogram  []*histogram  `json:"histograms"`
-	Log        []Log         `json:"logs"`
 }
 
 type RoutineMetric struct {

@@ -1,7 +1,6 @@
 package outis
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -11,121 +10,133 @@ import (
 	"time"
 )
 
+// ID defines the type of identifier
 type ID string
 
+// ToString return the identifier as a string
 func (id ID) ToString() string {
 	return string(id)
 }
 
+// Watch defines the type of the watcher structure
 type Watch struct {
 	Id    ID        `json:"id"`
 	Name  string    `json:"name"`
 	RunAt time.Time `json:"run_at"`
 
-	signal chan os.Signal
-	outis  Outis
-	log    Logger
+	outis IOutis
+	log   ILogger
 }
 
+// Watcher initializes a new watcher
 func Watcher(id, name string, opts ...WatcherOption) *Watch {
 	watch := &Watch{
-		Id:     ID(id),
-		Name:   name,
-		signal: make(chan os.Signal, 1),
-		log:    setupLogger(),
-		outis:  newOutis(),
-		RunAt:  time.Now(),
+		Id:    ID(id),
+		Name:  name,
+		log:   setupLogger(),
+		outis: newOutis(),
+		RunAt: time.Now(),
 	}
 
 	for _, opt := range opts {
-		if opt == nil {
-			continue
-		}
 		opt(watch)
 	}
 
-	signal.Notify(watch.signal, syscall.SIGINT, syscall.SIGTERM)
 	return watch
 }
 
-func (w *Watch) Wait() {
-	for range w.signal {
-		w.log.Infof("closing signal received")
+// Wait method responsible for keeping routines running
+func (watch *Watch) Wait() {
+	if err := watch.outis.Wait(); err != nil {
+		watch.log.Errorf("%s", err.Error())
 		return
 	}
 }
 
-func (w *Watch) Go(opts ...Option) {
-	ctx := &Context{
-		Watcher:      *w,
-		indicator:    make([]*indicator, 0),
-		metadata:     make(Metadata),
-		logs:         make([]Log, 0),
-		LoadInterval: 0,
-		L:            w.log,
-		Interval:     time.Minute,
-		RunAt:        time.Now(),
-		Context:      context.Background(),
-	}
+// Wait responsible for keeping routines running
+func Wait() {
+	wait := make(chan os.Signal, 1)
+	signal.Notify(wait, syscall.SIGINT, syscall.SIGTERM)
 
-	for _, opt := range opts {
-		if opt == nil {
-			continue
+	for range wait {
+		return
+	}
+}
+
+// Go create a new routine in the watcher
+func (watch *Watch) Go(opts ...Option) {
+	watch.outis.Go(func() error {
+		ctx := &Context{
+			indicator: make([]*indicator, 0),
+			metadata:  make(Metadata),
+			log:       watch.log,
+			Interval:  time.Minute,
+			RunAt:     time.Now(),
+			Watcher:   *watch,
 		}
-		opt(ctx)
+
+		for _, opt := range opts {
+			opt(ctx)
+		}
+
+		if err := ctx.validate(); err != nil {
+			return err
+		}
+
+		info := runtime.FuncForPC(reflect.ValueOf(ctx.script).Pointer())
+		file, line := info.FileLine(info.Entry())
+		ctx.Path = fmt.Sprintf("%s:%v", file, line)
+
+		if err := watch.outis.Init(ctx); err != nil {
+			return err
+		}
+
+		defer func() {
+			if r := recover(); r != nil {
+				ctx.log.Panicf("RECOVER: %s", r)
+			}
+		}()
+
+		ticker := time.NewTicker(ctx.Interval)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			if err := ctx.execute(); err != nil {
+				ctx.log.Errorf(err.Error())
+				continue
+			}
+		}
+
+		return nil
+	})
+}
+
+func (ctx *Context) execute() error {
+	if !ctx.isTime(time.Now().Hour()) {
+		return nil
 	}
 
-	if err := ctx.validate(); err != nil {
-		ctx.Error("%v", err)
-		return
-	}
-
-	info := runtime.FuncForPC(reflect.ValueOf(ctx.script).Pointer())
-	file, line := info.FileLine(info.Entry())
-	ctx.Path = fmt.Sprintf("%s:%v", file, line)
-
-	if ctx.LoadInterval != 0 {
-		go ctx.reload(w.outis)
-	}
-
-	if err := w.outis.Init(ctx); err != nil {
-		ctx.Error("%v", err)
-		return
-	}
-
+	now := time.Now()
 	defer func() {
 		if r := recover(); r != nil {
-			ctx.Error("%v", r)
+			ctx.log.Panicf("RECOVER: %v", r)
 		}
 	}()
 
-	ticker := time.NewTicker(ctx.Interval)
-	for range ticker.C {
-		if !ctx.isTime(time.Now().Hour()) {
-			continue
-		}
-
-		now := time.Now()
-		if err := w.outis.Before(ctx); err != nil {
-			ctx.Error(err.Error())
-			continue
-		}
-
-		func(script Script) {
-			defer func() {
-				if err := recover(); err != nil {
-					ctx.Error("%v", err)
-				}
-			}()
-			script(ctx)
-		}(ctx.script)
-
-		if err := w.outis.After(ctx); err != nil {
-			ctx.Error(err.Error())
-			continue
-		}
-
-		ctx.metrics(w, now)
-		ticker.Reset(ctx.Interval)
+	if err := ctx.Watcher.outis.Before(ctx); err != nil {
+		return err
 	}
+
+	if err := ctx.script(ctx); err != nil {
+		return err
+	}
+
+	ctx.latency = time.Since(now)
+	if err := ctx.Watcher.outis.After(ctx); err != nil {
+		return err
+	}
+
+	ctx.metrics(&ctx.Watcher, now)
+
+	return nil
 }
