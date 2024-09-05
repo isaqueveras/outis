@@ -1,34 +1,50 @@
 package outis
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
+// Metadata defines type of metadata used in metrics
 type Metadata map[string]interface{}
 
-func (metric Metadata) Set(value string, args interface{}) {
-	metric[value] = args
+// Set add data to metadata
+func (md Metadata) Set(value string, args interface{}) {
+	md[value] = args
 }
 
+// GetBytes return the routine metadata in bytes
+func (md Metadata) GetBytes() []byte {
+	value, _ := json.Marshal(md)
+	return value
+}
+
+// EventMetric defines the type of metric sent in the event
 type EventMetric struct {
-	ID         string        `json:"id"`
-	Latency    time.Duration `json:"latency"`
-	StartedAt  time.Time     `json:"started_at"`
-	FinishedAt time.Time     `json:"finished_at"`
-	Watcher    WatcherMetric `json:"watcher"`
-	Routine    RoutineMetric `json:"routine"`
-	Metadata   Metadata      `json:"metadata"`
-	Indicator  []*indicator  `json:"indicators"`
-	Histogram  []*histogram  `json:"histograms"`
+	ID         string
+	Latency    time.Duration
+	StartedAt  time.Time
+	FinishedAt time.Time
+	Watcher    WatcherMetric
+	Routine    RoutineMetric
+	Metadata   Metadata
+	Indicators []*indicator
+	Histograms []*histogram
 }
 
+// RoutineMetric defines the type of metric
+// of a routine sent in the event
 type RoutineMetric struct {
-	ID        string    `json:"routine_id"`
-	Name      string    `json:"name"`
-	Path      string    `json:"path"`
-	StartedAt time.Time `json:"started_at"`
+	ID        string
+	Name      string
+	Path      string
+	StartedAt time.Time
 }
 
+// WatcherMetric defines the type of metric
+// of a watcher sent in the event
 type WatcherMetric struct {
-	ID    string    `json:"id"`
-	Name  string    `json:"name"`
-	RunAt time.Time `json:"run_at"`
+	ID    string
+	Name  string
+	RunAt time.Time
 }
