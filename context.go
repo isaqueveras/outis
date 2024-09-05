@@ -21,6 +21,7 @@ type Context struct {
 	script     func(*Context) error
 	metadata   Metadata
 	latency    time.Duration
+	notUseLoop bool
 	histrogram []*histogram
 	indicator  []*indicator
 	log        ILogger

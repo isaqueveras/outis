@@ -97,6 +97,10 @@ func (watch *Watch) Go(opts ...Option) {
 			}
 		}()
 
+		if ctx.notUseLoop {
+			return ctx.execute()
+		}
+
 		ticker := time.NewTicker(ctx.Interval)
 		defer ticker.Stop()
 
