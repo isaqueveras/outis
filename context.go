@@ -5,18 +5,22 @@ import (
 	"time"
 )
 
+type period struct {
+	startHour, endHour     uint
+	startMinute, endMinute uint
+}
+
 // Context defines the data structure of the routine context
 type Context struct {
-	Id        ID            `json:"id,omitempty"`
-	RoutineID ID            `json:"routine_id,omitempty"`
-	Name      string        `json:"name,omitempty"`
-	Desc      string        `json:"desc,omitempty"`
-	Start     uint          `json:"start,omitempty"`
-	End       uint          `json:"end,omitempty"`
-	Interval  time.Duration `json:"interval,omitempty"`
-	Path      string        `json:"path,omitempty"`
-	RunAt     time.Time     `json:"run_at,omitempty"`
-	Watcher   Watch         `json:"-"`
+	Id        ID
+	RoutineID ID
+	Name      string
+	Desc      string
+	period    period
+	Interval  time.Duration
+	Path      string
+	RunAt     time.Time
+	Watcher   Watch
 
 	script     func(*Context) error
 	metadata   Metadata
@@ -69,8 +73,8 @@ func (ctx *Context) metrics(w *Watch, now time.Time) {
 		FinishedAt: time.Now(),
 		Latency:    time.Since(now),
 		Metadata:   ctx.metadata,
-		Indicator:  ctx.indicator,
-		Histogram:  ctx.histrogram,
+		Indicators: ctx.indicator,
+		Histograms: ctx.histrogram,
 		Watcher: WatcherMetric{
 			ID:    w.Id.ToString(),
 			Name:  w.Name,
@@ -87,16 +91,28 @@ func (ctx *Context) metrics(w *Watch, now time.Time) {
 	ctx.metadata, ctx.indicator, ctx.histrogram = Metadata{}, []*indicator{}, []*histogram{}
 }
 
-func (ctx *Context) isTime(hour int) bool {
-	if ctx.Start == 0 && ctx.End == 0 {
-		return true
+func (ctx *Context) sleep(now time.Time) {
+	if ctx.mustWait(now.Hour(), ctx.period.startHour, ctx.period.endHour) {
+		time.Sleep(time.Date(now.Year(), now.Month(), now.Day(), now.Hour()+int(ctx.period.startHour),
+			0, 0, 0, now.Location()).Sub(now))
 	}
 
-	if ctx.Start <= ctx.End {
-		return (hour >= int(ctx.Start) && hour <= int(ctx.End))
+	if ctx.mustWait(now.Minute(), ctx.period.startMinute, ctx.period.endMinute) {
+		time.Sleep(time.Date(now.Year(), now.Month(), now.Day(), now.Hour()+int(ctx.period.startHour),
+			now.Minute()+int(ctx.period.startMinute), 0, 0, now.Location()).Sub(now))
+	}
+}
+
+func (ctx *Context) mustWait(time int, start, end uint) bool {
+	if start == 0 && end == 0 {
+		return false
 	}
 
-	return (hour >= int(ctx.Start) || hour <= int(ctx.End))
+	if start <= end {
+		return !(time >= int(start) && time <= int(end))
+	}
+
+	return !(time >= int(start) || time <= int(end))
 }
 
 func (ctx *Context) validate() error {

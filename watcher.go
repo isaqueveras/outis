@@ -116,11 +116,8 @@ func (watch *Watch) Go(opts ...Option) {
 }
 
 func (ctx *Context) execute() error {
-	if !ctx.isTime(time.Now().Hour()) {
-		return nil
-	}
-
 	now := time.Now()
+	ctx.sleep(now)
 	defer func() {
 		if r := recover(); r != nil {
 			ctx.log.Panicf("RECOVER: %v", r)
