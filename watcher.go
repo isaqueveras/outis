@@ -93,7 +93,7 @@ func (watch *Watch) Go(opts ...Option) {
 
 		defer func() {
 			if r := recover(); r != nil {
-				ctx.log.Panicf("RECOVER: %s", r)
+				ctx.log.Panicf(fmt.Sprintf("%v", r))
 			}
 		}()
 
@@ -120,7 +120,7 @@ func (ctx *Context) execute() error {
 	ctx.sleep(now)
 	defer func() {
 		if r := recover(); r != nil {
-			ctx.log.Panicf("RECOVER: %v", r)
+			ctx.log.Panicf(fmt.Sprintf("%v", r))
 		}
 	}()
 
