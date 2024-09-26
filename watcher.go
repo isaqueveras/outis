@@ -1,6 +1,7 @@
 package outis
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -73,6 +74,7 @@ func (watch *Watch) Go(opts ...Option) {
 			Interval:  time.Minute,
 			RunAt:     time.Now(),
 			Watcher:   *watch,
+			context:   context.Background(),
 		}
 
 		for _, opt := range opts {
