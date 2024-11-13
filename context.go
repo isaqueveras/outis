@@ -33,24 +33,9 @@ type Context struct {
 	context    context.Context
 }
 
-// Deadline returns the time at which work performed on behalf of this context should be canceled.
-func (ctx *Context) Deadline() (time.Time, bool) {
-	return ctx.context.Deadline()
-}
-
-// Done returns a channel that's closed when work done on behalf of this context should be canceled.
-func (ctx *Context) Done() <-chan struct{} {
-	return ctx.context.Done()
-}
-
-// Err returns the context error
-func (ctx *Context) Err() error {
-	return ctx.context.Err()
-}
-
-// Value returns the value associated with this context for key
-func (ctx *Context) Value(key any) any {
-	return ctx.context.Value(key)
+// Context returns the application context
+func (ctx *Context) Context() context.Context {
+	return ctx.context
 }
 
 // GetLatency get script execution latency (in seconds)
